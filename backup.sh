@@ -39,23 +39,18 @@ do
       ;;
     u)
       MONGODB_USER=$OPTARG
-      ECHO "Mongodb User: $OPTARG"
       ;;
     p)
       MONGODB_PASSWORD=$OPTARG
-      ECHO "Mongodb Password: $OPTARG"
       ;;
     k)
       AWS_ACCESS_KEY=$OPTARG
-      ECHO "AWS Access Key: $OPTARG"
       ;;
     s)
       AWS_SECRET_KEY=$OPTARG
-      ECHO "AWS Secret Key: $OPTARG"
       ;;
     b)
       S3_BUCKET=$OPTARG
-      ECHO "Amazon S3 Bucket: $OPTARG"
       ;;
     ?)
       usage
