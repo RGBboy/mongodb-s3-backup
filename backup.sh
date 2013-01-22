@@ -7,6 +7,8 @@
 
 set -e
 
+export PATH="$PATH:/usr/local/bin"
+
 usage()
 {
 cat << EOF
