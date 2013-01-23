@@ -86,7 +86,7 @@ mongodump -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" --out $DIR/$FI
 mongo -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" admin --eval "printjson(db.fsyncUnlock());"
 
 # Tar Gzip the file
-tar -zcvf $DIR/backup/$ARCHIVE_NAME $DIR/$FILE_NAME
+tar -C $DIR/backup/ -zcvf $DIR/backup/$ARCHIVE_NAME $FILE_NAME
 
 # Remove the backup directory
 rm -r $DIR/$FILE_NAME
