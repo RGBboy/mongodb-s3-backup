@@ -22,6 +22,7 @@ OPTIONS:
    -p      Mongodb password
    -k      AWS Access Key
    -s      AWS Secret Key
+   -r      Amazon S3 region
    -b      Amazon S3 bucket name
 EOF
 }
@@ -30,6 +31,7 @@ MONGODB_USER=
 MONGODB_PASSWORD=
 AWS_ACCESS_KEY=
 AWS_SECRET_KEY=
+S3_REGION=
 S3_BUCKET=
 
 while getopts “ht:u:p:k:s:b:” OPTION
@@ -50,6 +52,9 @@ do
       ;;
     s)
       AWS_SECRET_KEY=$OPTARG
+      ;;
+    r)
+      S3_REGION=$OPTARG
       ;;
     b)
       S3_BUCKET=$OPTARG
@@ -100,10 +105,10 @@ STRING_TO_SIGN="PUT\n$CONTENT_MD5\n$CONTENT_TYPE\n$HEADER_DATE\n/$S3_BUCKET/$ARC
 SIGNATURE=$(echo -e -n $STRING_TO_SIGN | openssl dgst -sha1 -binary -hmac $AWS_SECRET_KEY | openssl enc -base64)
 
 curl -X PUT \
---header "Host: $S3_BUCKET.s3-ap-southeast-1.amazonaws.com" \
+--header "Host: $S3_BUCKET.s3-$S3_REGION.amazonaws.com" \
 --header "Date: $HEADER_DATE" \
 --header "content-type: $CONTENT_TYPE" \
 --header "Content-MD5: $CONTENT_MD5" \
 --header "Authorization: AWS $AWS_ACCESS_KEY:$SIGNATURE" \
 --upload-file $DIR/backup/$ARCHIVE_NAME \
-https://$S3_BUCKET.s3-ap-southeast-1.amazonaws.com/$ARCHIVE_NAME
+https://$S3_BUCKET.s3-$S3_REGION.amazonaws.com/$ARCHIVE_NAME

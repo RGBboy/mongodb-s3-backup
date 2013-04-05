@@ -12,7 +12,9 @@
 
 ## Usage
 
-`bash /path/to/backup.sh -u MONGODB_USER -p MONGODB_PASSWORD -k AWS_ACCESS_KEY -s AWS_SECRET_KEY -b S3_BUCKET`
+`bash /path/to/backup.sh -u MONGODB_USER -p MONGODB_PASSWORD -k AWS_ACCESS_KEY -s AWS_SECRET_KEY -r S3_REGION -b S3_BUCKET`
+
+Where `S3_REGION` is in the format `ap-southeast-1`
 
 ## Cron
 
