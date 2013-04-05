@@ -34,7 +34,7 @@ AWS_SECRET_KEY=
 S3_REGION=
 S3_BUCKET=
 
-while getopts “ht:u:p:k:s:b:” OPTION
+while getopts “ht:u:p:k:s:r:b:” OPTION
 do
   case $OPTION in
     h)
@@ -66,7 +66,7 @@ do
   esac
 done
 
-if [[ -z $MONGODB_USER ]] || [[ -z $MONGODB_PASSWORD ]] || [[ -z $AWS_ACCESS_KEY ]] || [[ -z $AWS_SECRET_KEY ]] || [[ -z $S3_BUCKET ]]
+if [[ -z $MONGODB_USER ]] || [[ -z $MONGODB_PASSWORD ]] || [[ -z $AWS_ACCESS_KEY ]] || [[ -z $AWS_SECRET_KEY ]] || [[ -z $S3_REGION ]] || [[ -z $S3_BUCKET ]]
 then
   usage
   exit 1
