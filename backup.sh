@@ -24,17 +24,21 @@ OPTIONS:
    -s      AWS Secret Key
    -r      Amazon S3 region
    -b      Amazon S3 bucket name
+   -d      Directory where to dump
+   -m      Mongodb host (eg: localhost:27017)
 EOF
 }
 
 MONGODB_USER=
 MONGODB_PASSWORD=
+MONGOD_HOST=
 AWS_ACCESS_KEY=
 AWS_SECRET_KEY=
 S3_REGION=
 S3_BUCKET=
+DUMP_DIR=
 
-while getopts “ht:u:p:k:s:r:b:” OPTION
+while getopts "ht:u:p:k:s:r:b:d:m:" OPTION
 do
   case $OPTION in
     h)
@@ -59,6 +63,12 @@ do
     b)
       S3_BUCKET=$OPTARG
       ;;
+    d)
+      DUMP_DIR=$OPTARG
+      ;;
+    m)
+      MONGOD_HOST=$OPTARG
+      ;;
     ?)
       usage
       exit
@@ -66,40 +76,33 @@ do
   esac
 done
 
-if [[ -z $MONGODB_USER ]] || [[ -z $MONGODB_PASSWORD ]] || [[ -z $AWS_ACCESS_KEY ]] || [[ -z $AWS_SECRET_KEY ]] || [[ -z $S3_REGION ]] || [[ -z $S3_BUCKET ]]
+if [[ -z $MONGODB_USER ]] || [[ -z $MONGODB_PASSWORD ]] || [[ -z $AWS_ACCESS_KEY ]] || [[ -z $AWS_SECRET_KEY ]] || [[ -z $S3_REGION ]] || [[ -z $S3_BUCKET ]] || [[ -z $DUMP_DIR ]] || [[ -z $MONGOD_HOST ]]
 then
   usage
   exit 1
 fi
 
-# Get the directory the script is being run from
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-echo $DIR
 # Store the current date in YYYY-mm-DD-HHMMSS
 DATE=$(date -u "+%F-%H%M%S")
-FILE_NAME="backup-$DATE"
+FILE_NAME="$MONGOD_HOST-backup-$DATE"
 ARCHIVE_NAME="$FILE_NAME.tar.gz"
 
-# Lock the database
-# Note there is a bug in mongo 2.2.0 where you must touch all the databases before you run mongodump
-mongo -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" admin --eval "var databaseNames = db.getMongo().getDBNames(); for (var i in databaseNames) { printjson(db.getSiblingDB(databaseNames[i]).getCollectionNames()) }; printjson(db.fsyncLock());"
-
 # Dump the database
-mongodump -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" --out $DIR/backup/$FILE_NAME
-
-# Unlock the database
-mongo -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" admin --eval "printjson(db.fsyncUnlock());"
+echo "Dumping $MONGOD_HOST in $DUMP_DIR/backup/$FILE_NAME"
+mongodump -h "$MONGOD_HOST" --username "$MONGODB_USER" --password "$MONGODB_PASSWORD" --out $DUMP_DIR/backup/$FILE_NAME > /dev/null
 
 # Tar Gzip the file
-tar -C $DIR/backup/ -zcvf $DIR/backup/$ARCHIVE_NAME $FILE_NAME/
+echo "Compressing the dump"
+tar -C $DUMP_DIR/backup/ -zcf $DUMP_DIR/backup/$ARCHIVE_NAME $FILE_NAME/
 
 # Remove the backup directory
-rm -r $DIR/backup/$FILE_NAME
+echo "Cleaning up"
+rm -r $DUMP_DIR/backup/$FILE_NAME
 
 # Send the file to the backup drive or S3
-
+echo "Uploading archive to $S3_BUCKET"
 HEADER_DATE=$(date -u "+%a, %d %b %Y %T %z")
-CONTENT_MD5=$(openssl dgst -md5 -binary $DIR/backup/$ARCHIVE_NAME | openssl enc -base64)
+CONTENT_MD5=$(openssl dgst -md5 -binary $DUMP_DIR/backup/$ARCHIVE_NAME | openssl enc -base64)
 CONTENT_TYPE="application/x-download"
 STRING_TO_SIGN="PUT\n$CONTENT_MD5\n$CONTENT_TYPE\n$HEADER_DATE\n/$S3_BUCKET/$ARCHIVE_NAME"
 SIGNATURE=$(echo -e -n $STRING_TO_SIGN | openssl dgst -sha1 -binary -hmac $AWS_SECRET_KEY | openssl enc -base64)
@@ -110,5 +113,9 @@ curl -X PUT \
 --header "content-type: $CONTENT_TYPE" \
 --header "Content-MD5: $CONTENT_MD5" \
 --header "Authorization: AWS $AWS_ACCESS_KEY:$SIGNATURE" \
---upload-file $DIR/backup/$ARCHIVE_NAME \
+--upload-file $DUMP_DIR/backup/$ARCHIVE_NAME \
 https://$S3_BUCKET.s3-$S3_REGION.amazonaws.com/$ARCHIVE_NAME
+
+rm -r $DUMP_DIR/backup/$ARCHIVE_NAME
+
+echo "Backup completed"
