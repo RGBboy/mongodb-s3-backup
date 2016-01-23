@@ -18,6 +18,7 @@ This script dumps the current mongo database, tars it, then sends it to an Amazo
 
 OPTIONS:
    -h      Show this message
+   -d      Mongodb database name
    -u      Mongodb user
    -p      Mongodb password
    -k      AWS Access Key
@@ -27,6 +28,7 @@ OPTIONS:
 EOF
 }
 
+MONGODB_DATABASE=
 MONGODB_USER=
 MONGODB_PASSWORD=
 AWS_ACCESS_KEY=
@@ -40,6 +42,9 @@ do
     h)
       usage
       exit 1
+      ;;
+    d)
+      MONGODB_DATABASE=$OPTARG
       ;;
     u)
       MONGODB_USER=$OPTARG
@@ -84,8 +89,8 @@ ARCHIVE_NAME="$FILE_NAME.tar.gz"
 # Note there is a bug in mongo 2.2.0 where you must touch all the databases before you run mongodump
 mongo -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" admin --eval "var databaseNames = db.getMongo().getDBNames(); for (var i in databaseNames) { printjson(db.getSiblingDB(databaseNames[i]).getCollectionNames()) }; printjson(db.fsyncLock());"
 
-# Dump the database
-mongodump -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" --out $DIR/backup/$FILE_NAME
+# Dump the database(s)
+mongodump -d "$MONGODB_DATABASE" -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" --out $DIR/backup/$FILE_NAME
 
 # Unlock the database
 mongo -username "$MONGODB_USER" -password "$MONGODB_PASSWORD" admin --eval "printjson(db.fsyncUnlock());"
