@@ -36,7 +36,7 @@ AWS_SECRET_KEY=
 S3_REGION=
 S3_BUCKET=
 
-while getopts “ht:u:p:k:s:r:b:” OPTION
+while getopts “ht:d:u:p:k:s:r:b:” OPTION
 do
   case $OPTION in
     h)
