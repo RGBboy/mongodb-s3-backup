@@ -6,11 +6,11 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 \
   && apt-get install mongodb-org-tools
 
 RUN apt-get update \
-  && apt-get install -y python-pip \
-  && pip install aws-cli
+  && apt-get install -y python python-pip \
+  && pip install awscli
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 ADD . /usr/src/app
 
-ENTRYPOINT ["bash"]
+ENTRYPOINT ["bash", "backup.sh"]
